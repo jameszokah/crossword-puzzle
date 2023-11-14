@@ -4,6 +4,8 @@
 
 This documentation provides information on the development and usage of a Crossword Puzzle Game built using the Flutter framework. The game is designed to entertain users by challenging them with crossword puzzles, enhancing their vocabulary and problem-solving skills.
 
+<img width="200" src="https://github.com/jameszokah/crossword-puzzle/assets/57928392/4ac3fde0-92a2-47b8-9c31-e072b6d1a1e3" />
+
 ## Development
 
 ### Technologies Used

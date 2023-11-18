@@ -5,7 +5,6 @@ import 'package:word_search_safety/word_search_safety.dart';
 
 void generateRandomWord(
     {required ValueNotifier<List<List<String>>> charList,
-    words,
     int numBoxPerRow = 7,
     required ValueNotifier<List<CrossWordAnswer>> answerList}) {
   // Create a list of words to be jumbled into a puzzle
@@ -47,7 +46,7 @@ void generateRandomWord(
     final WSSolved solved = wordSearch.solvePuzzle(newPuzzle.puzzle!, wl);
     // All found words by solving the puzzle
     debugPrint('Found Words!');
-    
+
     answerList.value = solved.found!
         .map((solve) =>
             CrossWordAnswer(wsloaction: solve, numPerRow: numBoxPerRow))

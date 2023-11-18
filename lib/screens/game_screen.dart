@@ -8,6 +8,8 @@ import 'package:crossword_puzzle/utils/utils.dart';
 import 'package:crossword_puzzle/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:word_search_safety/word_search_safety.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -24,29 +26,21 @@ class _GameScreenState extends State<GameScreen> {
 
   late ConfettiController? controllerCenter;
 
-  final List<String> _words = const [
-    'flutter',
-    'crossword',
-    'puzzle',
-    'hexagonal',
-    'shape',
-    'drag',
-    'highlight',
-    'score',
-    'button',
-    'pause',
-    'resume',
-    'time',
-    'out',
-  ];
+  final player = AudioPlayer();
 
   List<String> _selectedLetters = [];
+
+  int _level = 1;
+
   int numBoxPerRow = 8;
+  bool _gameOverDialogShown = false;
 
   int _score = 0;
-
+  late Timer? _timer;
   bool _isPaused = false;
   bool victoryPopup = false;
+  bool startNewGame = false;
+  bool isGameOver = false;
 
   int _timeLeft = 180;
 
@@ -70,10 +64,28 @@ class _GameScreenState extends State<GameScreen> {
 
     generateRandomWord(
         charList: charList!,
-        words: _words,
         numBoxPerRow: numBoxPerRow,
         answerList: answerList!);
     _startTimer();
+
+    player
+        .setSource(AssetSource('assets/sounds/background_sound.wav'))
+        .then((value) => {});
+    player
+        .setSource(AssetSource('assets/sounds/correct_word.wav'))
+        .then((value) => {});
+    player
+        .setSource(AssetSource('assets/sounds/game_over.wav'))
+        .then((value) => {});
+    player
+        .setSource(AssetSource('assets/sounds/victory.wav'))
+        .then((value) => {});
+
+    player.play(AssetSource('assets/sounds/background_sound.wav'));
+    player.audioCache.load(
+        'sounds/correct_word.wav'); // Replace 'correct_word.mp3' with your actual file name
+    player.audioCache.load('sounds/victory.wav');
+    player.audioCache.load('sounds/game_over.wav');
   }
 
   @override
@@ -84,14 +96,19 @@ class _GameScreenState extends State<GameScreen> {
 
   void _startTimer() {
     const oneSec = Duration(seconds: 1);
-    Timer.periodic(
+    _timer = Timer.periodic(
       oneSec,
       (Timer timer) {
         if (_timeLeft == 0) {
           timer.cancel();
           // timer
-          _endGame();
-        } else {
+          if (!isGameOver) {
+            _endGame();
+            setState(() {
+              isGameOver = true;
+            });
+          }
+        } else if (!_isPaused) {
           setState(() {
             _timeLeft--;
           });
@@ -100,24 +117,66 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // pause timer
   void _pauseTimer() {
-    setState(() {
-      _isPaused = true;
-    });
+    // You can add additional logic here if needed
+    // For example, stop animations or other time-dependent processes
+    print('Game Paused!');
+  }
+
+  void _resumeTimer() {
+    // Add logic to handle tasks when the game is resumed
+    print('Game Resumed');
+
+    // Clear any existing timer before starting a new one
+    _clearTimer();
+
+    // Restart the timer
+    _startTimer();
+  }
+
+  void _clearTimer() {
+    // Clear the existing timer
+    // This ensures that there's only one active timer at a time
+    if (_timer != null && _timer!.isActive) {
+      _timer!.cancel();
+    }
   }
 
   void _endGame() {
-    showDialog<void>(
-        context: context, builder: (context) => errorAlert(context));
+    if (!_gameOverDialogShown) {
+      setState(() {
+        _gameOverDialogShown = true;
+      });
 
-    resetGame();
+      showDialog<void>(
+        context: context,
+        builder: (context) => errorAlert(context),
+      );
+
+      resetTimer();
+      resetStrokes(); // Reset the strokes
+      resetGame();
+
+      // Check for a win and increment the level
+      if (_score > 0 && _score % (3 * 10) == 0) {
+        _level++;
+        // You can add additional logic here when a new level is reached
+      }
+      player.play(AssetSource('assets/sounds/game_over.wav'));
+    }
+    // Play a sound effect for game over
   }
 
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
     });
+
+    if (_isPaused) {
+      _pauseTimer();
+    } else {
+      _resumeTimer();
+    }
   }
 
   void resetGame() {
@@ -126,19 +185,52 @@ class _GameScreenState extends State<GameScreen> {
       _timeLeft = 180;
       _isPaused = false;
       _selectedLetters = [];
+      _gameOverDialogShown = false; // Reset the flag
+      _level = 1;
+
       generateRandomWord(
           charList: charList!,
-          words: _words,
           numBoxPerRow: numBoxPerRow,
           answerList: answerList!);
+    });
+    resetStrokes(); // Reset the strokes
+    ; // Reset the level
+  }
+
+  void resetStrokes() {
+    setState(() {
+      answerList!.value.forEach((answer) {
+        answer.done = false;
+      });
+      charsDone.value.clear();
     });
   }
 
   void _onLetterSelected(String letter) {
+    int letterScore = calculateLetterScore(
+        letter); // You can implement your custom scoring logic
     setState(() {
       _selectedLetters.add(letter);
-      _score += 10;
+      _score += letterScore;
     });
+
+    // Play a sound effect for correct word
+    player.play(AssetSource('assets/sounds/correct_word.wav')).then((v) {});
+  }
+
+  int calculateLetterScore(String letter) {
+    // Implement your custom scoring logic based on the letter
+    // For example, you can return different scores for different letters
+    // or you can have a scoring table based on letter frequency, etc.
+    // This function will be called for each selected letter.
+    return 10; // Default score is 10 for this example
+  }
+
+  void resetTimer() {
+    setState(() {
+      _timeLeft = 180; // Set the initial time or any other desired time
+    });
+    _startTimer(); // Start the timer again
   }
 
   Widget errorAlert(BuildContext context) {
@@ -148,12 +240,41 @@ class _GameScreenState extends State<GameScreen> {
       actions: [
         TextButton(
           onPressed: () {
+            setState(() {
+              // startNewGame = true;
+              _gameOverDialogShown = false;
+              isGameOver = false;
+            });
+            resetGame();
+
+            Navigator.of(context).pop();
+          },
+          child: const Text('RESTART'),
+        ),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              // startNewGame = true;
+              _gameOverDialogShown = false;
+              isGameOver = false;
+              _timeLeft = 1;
+            });
+            _togglePause();
+
             Navigator.of(context).pop();
           },
           child: const Text('OK'),
         ),
       ],
-    );
+    )
+        .animate()
+        .slideY(begin: -25, end: 0, duration: const Duration(seconds: 1))
+        .fadeIn(
+            duration: const Duration(seconds: 1),
+            delay: const Duration(seconds: 1))
+        .shakeX(
+            delay: const Duration(seconds: 1),
+            duration: const Duration(seconds: 1));
   }
 
   Widget successAlert(BuildContext context) {
@@ -176,6 +297,14 @@ class _GameScreenState extends State<GameScreen> {
       ),
       actions: [
         TextButton(
+          onPressed: () => controllerCenter!.play(),
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.red,
+          ),
+          child:
+              const Text('Celebrate!!!', style: TextStyle(color: Colors.white)),
+        ),
+        TextButton(
           onPressed: () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             backgroundColor: Colors.red,
@@ -183,7 +312,13 @@ class _GameScreenState extends State<GameScreen> {
           child: const Text('ACCEPT', style: TextStyle(color: Colors.white)),
         ),
       ],
-    );
+    )
+        .animate()
+        .slideY(begin: 25, end: 0, duration: const Duration(seconds: 1))
+        .fadeIn(
+            duration: const Duration(seconds: 1),
+            delay: const Duration(seconds: 1))
+        .flipH(delay: const Duration(seconds: 1));
   }
 
   @override
@@ -219,17 +354,45 @@ class _GameScreenState extends State<GameScreen> {
             Navigator.of(context).pop();
           },
         ),
-        actions: const [
-          // IconButton(
-          //   icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
-          //   onPressed: _togglePause,
-          // ),
+        actions: [
+          IconButton(
+            icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
+            onPressed: _togglePause,
+          ),
         ],
       ),
       body: Column(
         children: [
-          Text('Time left: $_timeLeft'),
-          Text('Score: $_score'),
+          Text(
+            'Level $_level',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Time left: $_timeLeft',
+            style: TextStyle(
+              // fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Score: ',
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '$_score',
+                style: TextStyle(
+                  // fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
           SizedBox(
               height: size.width,
               child: generateCrossWordBox(charList!, _onLetterSelected)),
@@ -295,31 +458,19 @@ class _GameScreenState extends State<GameScreen> {
                         valueListenable: currentDragObj,
                         builder: (context, CurrentDragObj value, child) {
                           Color? color = Colors.transparent;
+                          Color? charColor = Constant.kPrimaryColor;
 
                           if (value.currentDragLine.contains(index)) {
                             color = Colors.red[
                                 800]; // change color when path line is contain index
+                            charColor = Constant.kWhiteColor;
                           } else if (charsDone.value.contains(index)) {
                             color = Colors
                                 .green; // change color box already path correct
-                                if (_timeLeft == 0) {
-                            color = Colors.transparent;
-                          }
-                          }
-
-                          
-
-                          //  play confetti controller if all answer is done
-                          final done = answerList!.value.every((answer) {
-                            return answer.answerLines!.join("-") ==
-                                currentDragObj.value.currentDragLine.join("-");
-                          });
-
-                          if (done) {
-                            controllerCenter!.play();
-                            showDialog<void>(
-                                context: context,
-                                builder: (context) => successAlert(context));
+                            charColor = Constant.kWhiteColor;
+                            if (_timeLeft == 0) {
+                              color = Colors.transparent;
+                            }
                           }
 
                           return CustomPaint(
@@ -339,9 +490,9 @@ class _GameScreenState extends State<GameScreen> {
                               child: Center(
                                 child: Text(
                                   char.toUpperCase(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
-                                    color: Constant.kPrimaryColor,
+                                    color: charColor,
                                   ),
                                 ),
                               ),
@@ -400,11 +551,11 @@ class _GameScreenState extends State<GameScreen> {
       final int idx = index * perColTotal + i;
       final word = value[idx].wsloaction!.word;
 
-      
       // if (value[idx].done) {
       //   _score += 10;
       // }
-      return Container(
+      return AnimatedContainer(
+        duration: const Duration(seconds: 1),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         margin: const EdgeInsets.only(top: 5),
         decoration: BoxDecoration(
@@ -458,6 +609,21 @@ class _GameScreenState extends State<GameScreen> {
       charsDone.notifyListeners();
       answerList!.notifyListeners();
       onDragEnd(null);
+
+      // Check for win condition after completing a word
+      if (checkForWin()) {
+        controllerCenter!.play();
+        showDialog<void>(
+          context: context,
+          builder: (context) {
+            resetTimer();
+            resetStrokes(); // Reset the strokes
+            // Play a sound effect for victory
+            player.play(AssetSource('assets/sounds/victory.wav'));
+            return successAlert(context);
+          },
+        );
+      }
     }
   }
 
@@ -552,9 +718,18 @@ class _GameScreenState extends State<GameScreen> {
       // nice triggered
       currentDragObj.value.indexArrayOnTouch = indexArray;
       currentDragObj.notifyListeners();
+
+      // this line to call _onLetterSelected with the selected letter
+      _onLetterSelected(indexSelecteds[0].wsloaction!.word[0]);
     } catch (e) {
       debugPrint(e.toString());
     }
   }
 
+// Add a method to check for the win condition
+  bool checkForWin() {
+    return answerList!.value.every((answer) {
+      return answer.done;
+    });
+  }
 }

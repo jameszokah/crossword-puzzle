@@ -31,7 +31,7 @@ class RPSCustomPainter extends CustomPainter {
     path.lineTo(size.width * 0.5000000, size.height * 0.08333333);
     path.close();
 
-    Paint paintFill = Paint()..style = PaintingStyle.stroke;
+    Paint paintFill = Paint()..style = PaintingStyle.fill;
     paintFill.color = color!;
     // paintFill.style = PaintingStyle.fill;
     // paintFill.color = colorFill!;

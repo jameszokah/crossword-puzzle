@@ -23,10 +23,7 @@ class MyApp extends StatelessWidget {
         fontFamily: GoogleFonts.pressStart2p().fontFamily,
         useMaterial3: true,
       ),
-      home: HomeScreen(
-        currentPlayer: Player(
-            name: 'Player 1', avatar: Avatar(name: 'Player 1', image: '')),
-      ),
+      home: HomeScreen(),
     );
   }
 }

@@ -69,19 +69,15 @@ class _GameScreenState extends State<GameScreen> {
     _startTimer();
 
     player
-        .setSource(AssetSource('assets/sounds/background_sound.wav'))
+        .setSource(AssetSource('sounds/background_sound.wav'))
         .then((value) => {});
     player
-        .setSource(AssetSource('assets/sounds/correct_word.wav'))
+        .setSource(AssetSource('sounds/correct_word.wav'))
         .then((value) => {});
-    player
-        .setSource(AssetSource('assets/sounds/game_over.wav'))
-        .then((value) => {});
-    player
-        .setSource(AssetSource('assets/sounds/victory.wav'))
-        .then((value) => {});
+    player.setSource(AssetSource('sounds/game_over.wav')).then((value) => {});
+    player.setSource(AssetSource('sounds/victory.wav')).then((value) => {});
 
-    player.play(AssetSource('assets/sounds/background_sound.wav'));
+    player.play(AssetSource('sounds/background_sound.wav'));
     player.audioCache.load(
         'sounds/correct_word.wav'); // Replace 'correct_word.mp3' with your actual file name
     player.audioCache.load('sounds/victory.wav');
@@ -162,7 +158,7 @@ class _GameScreenState extends State<GameScreen> {
         _level++;
         // You can add additional logic here when a new level is reached
       }
-      player.play(AssetSource('assets/sounds/game_over.wav'));
+      player.play(AssetSource('sounds/game_over.wav'));
     }
     // Play a sound effect for game over
   }
@@ -215,7 +211,7 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     // Play a sound effect for correct word
-    player.play(AssetSource('assets/sounds/correct_word.wav')).then((v) {});
+    player.play(AssetSource('sounds/correct_word.wav')).then((v) {});
   }
 
   int calculateLetterScore(String letter) {
@@ -377,6 +373,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
           Row(
+            key: ValueKey('game_stats'),
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -397,7 +394,7 @@ class _GameScreenState extends State<GameScreen> {
               height: size.width,
               child: generateCrossWordBox(charList!, _onLetterSelected)),
           // SizedBox
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           drawAnswerList(_selectedLetters, numBoxPerRow),
 
           // victoryPopup ? VictoryPopup() : const SizedBox(),
@@ -619,7 +616,7 @@ class _GameScreenState extends State<GameScreen> {
             resetTimer();
             resetStrokes(); // Reset the strokes
             // Play a sound effect for victory
-            player.play(AssetSource('assets/sounds/victory.wav'));
+            player.play(AssetSource('sounds/victory.wav'));
             return successAlert(context);
           },
         );

@@ -7,6 +7,7 @@ import 'package:crossword_puzzle/utils/constant.dart';
 import 'package:crossword_puzzle/utils/utils.dart';
 import 'package:crossword_puzzle/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:word_search_safety/word_search_safety.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -27,6 +28,8 @@ class _GameScreenState extends State<GameScreen> {
   late ConfettiController? controllerCenter;
 
   final player = AudioPlayer();
+
+  String? playerName;
 
   List<String> _selectedLetters = [];
 
@@ -62,6 +65,8 @@ class _GameScreenState extends State<GameScreen> {
     controllerCenter = ConfettiController(duration: const Duration(seconds: 2));
     // controllerCenter!.play();
 
+    _loadName();
+
     generateRandomWord(
         charList: charList!,
         numBoxPerRow: numBoxPerRow,
@@ -77,7 +82,11 @@ class _GameScreenState extends State<GameScreen> {
     player.setSource(AssetSource('sounds/game_over.wav')).then((value) => {});
     player.setSource(AssetSource('sounds/victory.wav')).then((value) => {});
 
-    player.play(AssetSource('sounds/background_sound.wav'));
+    // player.play(AssetSource('sounds/background_sound.wav')).then((v) async {
+    //   await player.onPlayerComplete.listen((event) {
+    //     // player.setReleaseMode(ReleaseMode.loop);
+    //   });
+    // });
     player.audioCache.load(
         'sounds/correct_word.wav'); // Replace 'correct_word.mp3' with your actual file name
     player.audioCache.load('sounds/victory.wav');
@@ -86,6 +95,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    player.dispose();
     controllerCenter!.dispose();
     super.dispose();
   }
@@ -136,6 +146,11 @@ class _GameScreenState extends State<GameScreen> {
     if (_timer != null && _timer!.isActive) {
       _timer!.cancel();
     }
+  }
+
+  void _loadName() async {
+    var prefs = await SharedPreferences.getInstance();
+    playerName = prefs.getString('player_name') ?? 'Player 1';
   }
 
   void _endGame() {
@@ -289,6 +304,16 @@ class _GameScreenState extends State<GameScreen> {
           GameConfetti(
             controllerCenter: controllerCenter,
           ),
+          const SizedBox(
+            height: 8,
+          ),
+          Text(
+            playerName!,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
       actions: [
@@ -297,11 +322,14 @@ class _GameScreenState extends State<GameScreen> {
           style: TextButton.styleFrom(
             backgroundColor: Colors.red,
           ),
-          child:
-              const Text('Celebrate!!!', style: TextStyle(color: Colors.white)),
+          child: const Text('Celebrate', style: TextStyle(color: Colors.white)),
         ),
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            resetTimer();
+            resetStrokes(); // Reset the strokes
+            Navigator.of(context).pop();
+          },
           style: TextButton.styleFrom(
             backgroundColor: Colors.red,
           ),
@@ -613,8 +641,6 @@ class _GameScreenState extends State<GameScreen> {
         showDialog<void>(
           context: context,
           builder: (context) {
-            resetTimer();
-            resetStrokes(); // Reset the strokes
             // Play a sound effect for victory
             player.play(AssetSource('sounds/victory.wav'));
             return successAlert(context);

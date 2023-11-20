@@ -130,9 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => GameScreen().animate().slideX(
-                                  duration: const Duration(seconds: 1),
-                                ),
+                            builder: (context) => GameScreen(),
                           ),
                         );
                       },

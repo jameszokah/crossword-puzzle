@@ -31,7 +31,10 @@ The project follows a standard Flutter project structure, with the main componen
 
 3. **Scoring System**: Tracks and scores users based on the correctness and speed of their answers.
 
-4. **Timer**: Provides a count down timer to make the game more engaging and challenging.
+4. **Timer**: Provides a countdown timer to make the game more engaging and challenging.
+5. **Game Level**: Provides a game level or stage system to make the game more engaging and challenging.
+   
+6. **Sound**: Provided sound for the game too as well.
 
 
 ## Usage
